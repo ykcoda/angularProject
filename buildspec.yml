@@ -20,7 +20,8 @@ phases:
       - echo Build completed on `date`
   
 artifacts:
-  base-directory: dist/my-angular-project
   files:
-    - "**/*"
+    - dist/my-angular-project/*
+    - appspec.yml
+    - scripts/*
   

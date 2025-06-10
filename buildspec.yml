@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo Entered the install phase...
+      - npm install -g @angular/cli
+ 
+  pre_build:
+    commands:
+      - npm install 
+
+  build:
+    commands:
+      - echo Entered the build phase...
+      - echo Build started on `date`
+      - ng build --configuration production
+      - echo Build completed on `date`
+  
+artifacts:
+  base-directory: dist/my-angular-project
+  files:
+    - "**/*"
+  

@@ -6,8 +6,7 @@
 trigger:
 - master
 
-pool:
-  vmImage: Onprem-UAT-Agent
+pool: Onprem-UAT-Agent
 
 steps:
 - task: NodeTool@0

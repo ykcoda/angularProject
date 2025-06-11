@@ -1,20 +1,55 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
 trigger:
-- master
+  - master
 
-pool: Onprem-UAT-Agent
+stages:
+  - stage: Build
+    displayName: Build Angular App
+    jobs:
+      - job: BuildApp
+        pool: Onprem-UAT-Agent 
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '18.x'
+            displayName: 'Install Node.js'
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js'
+          - script: |
+              npm install -g @angular/cli
+              npm ci
+            displayName: 'Install dependencies'
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+          - script: ng build --configuration production
+            displayName: 'Build Angular App'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: 'dist/my-angular-project'
+              ArtifactName: 'angular-build'
+              publishLocation: 'Container'
+
+  - stage: Deploy
+    displayName: Deploy to On-Prem Server
+    dependsOn: Build
+    jobs:
+      - deployment: DeployApp
+        displayName: 'Deploy to On-Prem Windows Server'
+        environment: 'OnPrem'  # Create this environment in Azure DevOps
+        pool:
+          name: 'Onprem-UAT-Agent'  # Your self-hosted agent pool name
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: angular-build
+
+                - task: CopyFiles@2
+                  inputs:
+                    SourceFolder: '$(Pipeline.Workspace)/angular-build'
+                    Contents: '**'
+                    TargetFolder: 'C:\\inetpub\\wwwroot\\MyAngularApp'  # Adjust as needed
+                  displayName: 'Copy files to server path'
+                - powershell: |
+                    Write-Host "Restarting IIS..."
+                    iisreset
+                  displayName: 'Restart IIS'
